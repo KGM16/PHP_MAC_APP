@@ -1,0 +1,8 @@
+Downloads composer, go to: https://getcomposer.org/download/
+Run the following command: composer require phpoffice/phpspre
+
+Enable gd and zip Extensions in PHP:
+  Open your php.ini file. This file is usually located in:
+  Windows: C:\xampp\php\php.ini
+  Remove the ; from ;extension=gd ;extension=zip
+  Restart xampp service 
