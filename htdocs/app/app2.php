@@ -1,5 +1,6 @@
 <?php
 require '../vendor/autoload.php';
+include ('index.html');
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -48,52 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
     $filename = 'output.xlsx';
     $writer->save($filename);
 
-} else {
 }
-?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML to Excel</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <h1>Paste HTML Here</h1>
-        <form method="POST">
-            <textarea name="html_input" rows="10" cols="50" placeholder="Paste your HTML here..."></textarea><br><br>
-            <button type="submit">Generate Excel</button>
-            <a href="<?php echo $filename; ?>">Download Excel File</a>
 
-        </form>
-
-        <?php if (!empty($tableData)): ?>
-            <h2>Extracted Data Preview:</h2> 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Index</th>
-                        <th>Port</th>
-                        <th>Number</th>
-                        <th>MAC Address</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($tableData as $row): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($row[0]); ?></td>
-                            <td><?php echo htmlspecialchars($row[1]); ?></td>
-                            <td><?php echo htmlspecialchars($row[2]); ?></td>
-                            <td><?php echo htmlspecialchars($row[3]); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-            <a href="<?php echo $filename; ?>">Download Excel File</a>
-        <?php endif; ?>
-    </div>
-</body>
-</html>
