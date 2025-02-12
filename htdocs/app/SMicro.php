@@ -13,29 +13,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
 
     $xpath = new DOMXPath($dom);
 
-    $trNodes = $xpath->query('//tr');
+    $trNodes = $xpath->query('//tbody/tr');
 
     foreach ($trNodes as $tr) {
         $tdNodes = $xpath->query('.//td', $tr); 
-        if ($tdNodes->length >= 4) {
-            $index = $tdNodes->item(0)->nodeValue; 
-            $port = $tdNodes->item(1)->nodeValue; 
-            $number = $tdNodes->item(2)->nodeValue; 
-            $mac = $tdNodes->item(3)->nodeValue; 
-            $tableData[] = [$index, $port, $number, $mac];
+        if ($tdNodes->length >= 7) { // Ensure there are enough columns
+            $mac = trim($tdNodes->item(3)->nodeValue); 
+            $vid = trim($tdNodes->item(4)->nodeValue); 
+            $onInterface = trim($tdNodes->item(5)->nodeValue); 
+            $bridge = trim($tdNodes->item(6)->nodeValue); 
+            $tableData[] = [$mac, $vid, $onInterface, $bridge];
         }
     }
 
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
 
-    $sheet->setCellValue('A1', 'Index');
-    $sheet->setCellValue('B1', 'Port');
-    $sheet->setCellValue('C1', 'VID');
-    $sheet->setCellValue('D1', 'MAC Address');
+    // Set headers
+    $sheet->setCellValue('A1', 'MAC Address');
+    $sheet->setCellValue('B1', 'VID');
+    $sheet->setCellValue('C1', 'On Interface');
+    $sheet->setCellValue('D1', 'Bridge');
 
+    // Insert data
     $row = 2; 
-
     foreach ($tableData as $dataRow) {
         $sheet->setCellValue('A' . $row, $dataRow[0]);
         $sheet->setCellValue('B' . $row, $dataRow[1]);
@@ -44,11 +45,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
         $row++;
     }
 
+    // Save the spreadsheet
     $writer = new Xlsx($spreadsheet);
     $filename = 'output.xlsx';
     $writer->save($filename);
 
 } else {
+    $filename = '';
 }
 ?>
 
@@ -66,8 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
         <form method="POST">
             <textarea name="html_input" rows="10" cols="50" placeholder="Paste your HTML here..."></textarea><br><br>
             <button type="submit">Generate Excel</button>
-            <a href="<?php echo $filename; ?>">Download Excel File</a>
-
+            <?php if ($filename): ?>
+                <a href="<?php echo $filename; ?>">Download Excel File</a>
+            <?php endif; ?>
         </form>
 
         <?php if (!empty($tableData)): ?>
@@ -75,10 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
             <table>
                 <thead>
                     <tr>
-                        <th>Index</th>
-                        <th>Port</th>
-                        <th>Number</th>
                         <th>MAC Address</th>
+                        <th>VID</th>
+                        <th>On Interface</th>
+                        <th>Bridge</th>
                     </tr>
                 </thead>
                 <tbody>

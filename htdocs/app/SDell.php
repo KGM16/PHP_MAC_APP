@@ -29,10 +29,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
 
-    $sheet->setCellValue('A1', 'Index');
-    $sheet->setCellValue('B1', 'Port');
-    $sheet->setCellValue('C1', 'VID');
-    $sheet->setCellValue('D1', 'MAC Address');
+    $sheet->setCellValue('A1', 'VLAN ID');
+    $sheet->setCellValue('B1', 'MAC Address');
+    $sheet->setCellValue('C1', 'Type');
+    $sheet->setCellValue('D1', 'Interface');
 
     $row = 2; 
 
