@@ -16,23 +16,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
     $trNodes = $xpath->query('//tr');
 
     foreach ($trNodes as $tr) {
-        $tdNodes = $xpath->query('.//td', $tr); 
-        if ($tdNodes->length >= 4) {
-            $index = $tdNodes->item(0)->nodeValue; 
-            $port = $tdNodes->item(1)->nodeValue; 
-            $number = $tdNodes->item(2)->nodeValue; 
-            $mac = $tdNodes->item(3)->nodeValue; 
-            $tableData[] = [$index, $port, $number, $mac];
+        $vlanNode = $xpath->query('.//td[@id[starts-with(., "lblVLAN_")]]', $tr);
+        $vlan = $vlanNode->length > 0 ? trim($vlanNode->item(0)->nodeValue) : '';
+
+        $macNode = $xpath->query('.//td[contains(., ":")]', $tr);
+        if ($macNode->length > 0) {
+            $macTd = $macNode->item(0);
+            foreach ($xpath->query('.//script', $macTd) as $script) {
+                $script->parentNode->removeChild($script);
+            }
+            $mac = trim($macTd->nodeValue);
+        } else {
+            $mac = '';
+        }
+
+        $interfaceNode = $xpath->query('.//td[contains(., "GE")]', $tr);
+        if ($interfaceNode->length > 0) {
+            $interfaceTd = $interfaceNode->item(0);
+            foreach ($xpath->query('.//script', $interfaceTd) as $script) {
+                $script->parentNode->removeChild($script);
+            }
+            $interface = trim($interfaceTd->nodeValue);
+        } else {
+            $interface = '';
+        }
+
+        if (!empty($vlan) && !empty($mac) && !empty($interface)) {
+            $tableData[] = [$vlan, $mac, $interface];
         }
     }
 
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
 
-    $sheet->setCellValue('A1', 'Index');
-    $sheet->setCellValue('B1', 'Port');
-    $sheet->setCellValue('C1', 'VID');
-    $sheet->setCellValue('D1', 'MAC Address');
+    $sheet->setCellValue('A1', 'VLAN');
+    $sheet->setCellValue('B1', 'MAC Address');
+    $sheet->setCellValue('C1', 'Interface');
 
     $row = 2; 
 
@@ -40,7 +59,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
         $sheet->setCellValue('A' . $row, $dataRow[0]);
         $sheet->setCellValue('B' . $row, $dataRow[1]);
         $sheet->setCellValue('C' . $row, $dataRow[2]);
-        $sheet->setCellValue('D' . $row, $dataRow[3]);
         $row++;
     }
 
@@ -49,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
     $writer->save($filename);
 
 } else {
+    $filename = '';
 }
 ?>
 
@@ -67,7 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
             <textarea name="html_input" rows="10" cols="50" placeholder="Paste your HTML here..."></textarea><br><br>
             <button type="submit">Generate Excel</button>
             <a href="<?php echo $filename; ?>">Download Excel File</a>
-
         </form>
 
         <?php if (!empty($tableData)): ?>
@@ -75,10 +93,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
             <table>
                 <thead>
                     <tr>
-                        <th>Index</th>
-                        <th>Port</th>
-                        <th>Number</th>
+                        <th>VLAN</th>
                         <th>MAC Address</th>
+                        <th>Interface</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -87,7 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
                             <td><?php echo htmlspecialchars($row[0]); ?></td>
                             <td><?php echo htmlspecialchars($row[1]); ?></td>
                             <td><?php echo htmlspecialchars($row[2]); ?></td>
-                            <td><?php echo htmlspecialchars($row[3]); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

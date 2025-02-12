@@ -16,23 +16,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
     $trNodes = $xpath->query('//tr');
 
     foreach ($trNodes as $tr) {
-        $tdNodes = $xpath->query('.//td', $tr); 
+        $tdNodes = $xpath->query('.//td[contains(@class, "h7")]', $tr); 
         if ($tdNodes->length >= 4) {
-            $index = $tdNodes->item(0)->nodeValue; 
-            $port = $tdNodes->item(1)->nodeValue; 
-            $number = $tdNodes->item(2)->nodeValue; 
-            $mac = $tdNodes->item(3)->nodeValue; 
-            $tableData[] = [$index, $port, $number, $mac];
+            $vlan = $tdNodes->item(1)->nodeValue; 
+            $tagged = $tdNodes->item(3)->nodeValue; 
+            $untagged = $tdNodes->item(4)->nodeValue; 
+
+            // Process tagged ports
+            $taggedPorts = processPorts($tagged);
+
+            // Process untagged ports
+            $untaggedPorts = processPorts($untagged);
+
+            // Combine tagged and untagged ports
+            $allPorts = array_unique(array_merge($taggedPorts, $untaggedPorts));
+            if ($vlan == 'VLAN') {
+                continue;
+            }
+            foreach ($allPorts as $port) {
+                if ($vlan == 'VLAN' || $port == 0 || $vlan == 0) {
+                    continue;
+                }
+                $taggedUntagged = '';
+                if (in_array($port, $taggedPorts)) {
+                    $taggedUntagged .= 'T';
+                }
+                if (in_array($port, $untaggedPorts)) {
+                    $taggedUntagged .= 'U';
+                }
+                $tableData[] = [$vlan, $port, $taggedUntagged];
+            }
         }
     }
 
     $spreadsheet = new Spreadsheet();
     $sheet = $spreadsheet->getActiveSheet();
 
-    $sheet->setCellValue('A1', 'Index');
+    $sheet->setCellValue('A1', 'VLAN');
     $sheet->setCellValue('B1', 'Port');
-    $sheet->setCellValue('C1', 'VID');
-    $sheet->setCellValue('D1', 'MAC Address');
+    $sheet->setCellValue('C1', 'Tagged/Untagged');
 
     $row = 2; 
 
@@ -40,7 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
         $sheet->setCellValue('A' . $row, $dataRow[0]);
         $sheet->setCellValue('B' . $row, $dataRow[1]);
         $sheet->setCellValue('C' . $row, $dataRow[2]);
-        $sheet->setCellValue('D' . $row, $dataRow[3]);
         $row++;
     }
 
@@ -49,6 +70,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
     $writer->save($filename);
 
 } else {
+}
+
+function processPorts($ports) {
+    $portArray = [];
+    $portParts = explode(',', $ports);
+    foreach ($portParts as $part) {
+        if (strpos($part, '-') !== false) {
+            list($start, $end) = explode('-', $part);
+            for ($i = (int)$start; $i <= (int)$end; $i++) {
+                $portArray[] = $i;
+            }
+        } else {
+            $portArray[] = (int)$part;
+        }
+    }
+    return $portArray;
 }
 ?>
 
@@ -67,7 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
             <textarea name="html_input" rows="10" cols="50" placeholder="Paste your HTML here..."></textarea><br><br>
             <button type="submit">Generate Excel</button>
             <a href="<?php echo $filename; ?>">Download Excel File</a>
-
         </form>
 
         <?php if (!empty($tableData)): ?>
@@ -75,10 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
             <table>
                 <thead>
                     <tr>
-                        <th>Index</th>
+                        <th>VLAN</th>
                         <th>Port</th>
-                        <th>Number</th>
-                        <th>MAC Address</th>
+                        <th>Tagged/Untagged</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -87,7 +122,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['html_input'])) {
                             <td><?php echo htmlspecialchars($row[0]); ?></td>
                             <td><?php echo htmlspecialchars($row[1]); ?></td>
                             <td><?php echo htmlspecialchars($row[2]); ?></td>
-                            <td><?php echo htmlspecialchars($row[3]); ?></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
