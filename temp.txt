@@ -1,0 +1,44 @@
+<?php
+
+$host = 'portquiz.net';
+$ports = [8000, 443, 993, 995, 25];
+$host2 = 'google.com';
+
+function checkPort($host, $port, $timeout = 5) {
+    $connection = @fsockopen($host, $port, $errno, $errstr, $timeout);
+    if (is_resource($connection)) {
+        fclose($connection);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+foreach ($ports as $index => $port) {
+    $id = str_pad($index, 2, '0', STR_PAD_LEFT);
+    if (checkPort($host, $port)) {
+        echo "Port ID $id: Port $port on $host is open.<br>";
+    } else {
+        echo "Port ID $id: Port $port on $host is closed.<br>";
+    }
+}
+
+function checkPort2($host2, $port, $timeout = 5) {
+    $connection = @fsockopen($host2, $port, $errno, $errstr, $timeout);
+    if (is_resource($connection)) {
+        fclose($connection);
+        return true;
+    } else {
+        return false;
+    }
+}
+echo "<br>";
+foreach ($ports as $index => $port) {
+    $id = str_pad($index, 2, '0', STR_PAD_LEFT);
+    if (checkPort2($host2, $port)) {
+        echo "Port ID $id: Port $port on $host2 is open.<br>";
+    } else {
+        echo "Port ID $id: Port $port on $host2 is closed.<br>";
+    }
+}
+?>
